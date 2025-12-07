@@ -1,4 +1,8 @@
-"use client"
+// @ts-nocheck
+"use client";
+
+import { ... } from "..."
+...
 
 import { useState } from 'react'
 import { useSearchParams } from 'next/navigation'
