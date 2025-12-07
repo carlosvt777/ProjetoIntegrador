@@ -4,7 +4,7 @@ import "./globals.css";
 import { SessionAuthProvider } from "@/components/session-auth";
 import { Toaster } from "sonner";
 import { QueryClientContext } from "@/providers/queryclient";
-import { CookieBanner } from "@/components/ui/CookieBanner"; // <-- CORRIGIDO
+import { CookieBanner } from "@/components/ui/cookie-banner";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
