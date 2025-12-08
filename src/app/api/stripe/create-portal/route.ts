@@ -1,14 +1,15 @@
 // src/app/api/stripe/create-portal/route.ts
 import { NextResponse } from "next/server";
 import { stripe } from "@/utils/stripe";
-import getServerSession from "next-auth"; // default export
+import { getServerSession } from "next-auth"; // named import
+import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export async function POST() {
-  // Usa a config padrão do NextAuth (sem authOptions)
-  const session = await getServerSession();
+  // aqui o getServerSession EXIGE authOptions
+  const session = await getServerSession(authOptions);
 
   if (!session?.user) {
     return NextResponse.json(
@@ -17,7 +18,6 @@ export async function POST() {
     );
   }
 
-  // tenta ler tanto stripe_customer_id (snake_case) quanto stripeCustomerId (camelCase)
   const stripeCustomerId =
     (session.user as any).stripe_customer_id ||
     (session.user as any).stripeCustomerId;
