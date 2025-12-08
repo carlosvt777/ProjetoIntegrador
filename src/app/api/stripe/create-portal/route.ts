@@ -7,8 +7,11 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export async function POST(req: NextRequest) {
-  // Lê o token JWT da sessão (cookie do NextAuth)
-  const token = await getToken({ req });
+  // Necessário em produção para validar o token
+  const token = await getToken({
+    req,
+    secret: process.env.NEXTAUTH_SECRET,
+  });
 
   if (!token) {
     return NextResponse.json(
@@ -17,7 +20,7 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  // tenta snake_case e camelCase
+  // stripe_customer_id pode estar em snake_case ou camelCase
   const stripeCustomerId =
     (token as any).stripe_customer_id ||
     (token as any).stripeCustomerId;
@@ -32,17 +35,25 @@ export async function POST(req: NextRequest) {
 
   const baseUrl = process.env.NEXT_PUBLIC_URL;
   if (!baseUrl) {
-    console.error("PORTAL: NEXT_PUBLIC_URL ausente no .env");
+    console.error("PORTAL: NEXT_PUBLIC_URL não configurada.");
     return NextResponse.json(
-      { error: "Configuração de URL ausente." },
+      { error: "URL pública não configurada." },
       { status: 500 }
     );
   }
 
-  const portal = await stripe.billingPortal.sessions.create({
-    customer: stripeCustomerId,
-    return_url: `${baseUrl}/planos`,
-  });
+  try {
+    const portalSession = await stripe.billingPortal.sessions.create({
+      customer: stripeCustomerId,
+      return_url: `${baseUrl}/planos`,
+    });
 
-  return NextResponse.json({ url: portal.url });
+    return NextResponse.json({ url: portalSession.url });
+  } catch (err) {
+    console.error("ERRO AO CRIAR PORTAL STRIPE:", err);
+    return NextResponse.json(
+      { error: "Falha ao criar portal de assinatura." },
+      { status: 500 }
+    );
+  }
 }
