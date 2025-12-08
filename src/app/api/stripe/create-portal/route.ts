@@ -1,32 +1,29 @@
 // src/app/api/stripe/create-portal/route.ts
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { stripe } from "@/utils/stripe";
-import { getServerSession } from "next-auth"; // named import
-import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import { getToken } from "next-auth/jwt";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-export async function POST() {
-  // aqui o getServerSession EXIGE authOptions
-  const session = await getServerSession(authOptions);
+export async function POST(req: NextRequest) {
+  // Lê o token JWT da sessão (cookie do NextAuth)
+  const token = await getToken({ req });
 
-  if (!session?.user) {
+  if (!token) {
     return NextResponse.json(
       { error: "Não autenticado." },
       { status: 401 }
     );
   }
 
+  // tenta snake_case e camelCase
   const stripeCustomerId =
-    (session.user as any).stripe_customer_id ||
-    (session.user as any).stripeCustomerId;
+    (token as any).stripe_customer_id ||
+    (token as any).stripeCustomerId;
 
   if (!stripeCustomerId) {
-    console.error(
-      "PORTAL: usuário logado sem stripe_customer_id na sessão",
-      { user: session.user }
-    );
+    console.error("PORTAL: token sem stripe_customer_id", { token });
     return NextResponse.json(
       { error: "Cliente Stripe não encontrado." },
       { status: 400 }
